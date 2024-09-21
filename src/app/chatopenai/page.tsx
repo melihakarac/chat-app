@@ -1,8 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { TextField, Button, Container, Box } from "@mui/material";
-
 import ChatWindow from "@/components/ChatWindow";
 import Sidebar from "@/components/Sidebar";
 import {
@@ -17,20 +16,32 @@ interface Message {
 }
 
 export default function ChatOpenAI() {
-  const [messages, setMessages] = useState<Message[]>(
-    loadChatHistory("chatOpenAIHistory")
-  );
+  const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState<string>("");
   const [loading, setLoading] = useState<boolean>(false);
+  const [isMounted, setIsMounted] = useState<boolean>(false); // Track if the component is mounted
+
+  useEffect(() => {
+    setIsMounted(true); // Set to true when the component is mounted
+  }, []);
 
   const refreshChat = () => {
-    const updatedMessages = loadChatHistory("chatOpenAIHistory");
-    setMessages(
-      updatedMessages.length > 0
-        ? updatedMessages
-        : [{ text: "Hello! How can I help you?", sender: "bot" }]
-    );
+    if (isMounted) {
+      const updatedMessages = loadChatHistory("chatOpenAIHistory");
+      setMessages(
+        updatedMessages.length > 0
+          ? updatedMessages
+          : [{ text: "Hello! How can I help you?", sender: "bot" }]
+      );
+    }
   };
+
+  useEffect(() => {
+    if (isMounted) {
+      const loadedMessages = loadChatHistory("chatOpenAIHistory");
+      setMessages(loadedMessages);
+    }
+  }, [isMounted]);
 
   const sendMessage = async () => {
     if (newMessage.trim()) {
@@ -38,7 +49,10 @@ export default function ChatOpenAI() {
       setMessages(updatedMessages);
       setNewMessage("");
       setLoading(true);
-      saveChatHistory("chatOpenAIHistory", updatedMessages);
+
+      if (isMounted) {
+        saveChatHistory("chatOpenAIHistory", updatedMessages);
+      }
 
       try {
         const response = await fetch("/api/chat", {
@@ -54,7 +68,9 @@ export default function ChatOpenAI() {
 
         setMessages((prevMessages) => {
           const newMessages = [...prevMessages, botMessage];
-          saveChatHistory("chatOpenAIHistory", newMessages);
+          if (isMounted) {
+            saveChatHistory("chatOpenAIHistory", newMessages);
+          }
           return newMessages;
         });
       } catch (error) {

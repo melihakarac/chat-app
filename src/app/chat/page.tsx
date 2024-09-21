@@ -24,25 +24,29 @@ export default function Chat() {
   const router = useRouter();
 
   const refreshChat = () => {
-    const updatedMessages = loadChatHistory("chatHistory");
-    setMessages(
-      updatedMessages.length > 0
-        ? updatedMessages
-        : [{ text: "Hello! How can I help you?", sender: "bot" }]
-    );
+    if (typeof window !== "undefined") {
+      const updatedMessages = loadChatHistory("chatHistory");
+      setMessages(
+        updatedMessages.length > 0
+          ? updatedMessages
+          : [{ text: "Hello! How can I help you?", sender: "bot" }]
+      );
+    }
   };
 
   useEffect(() => {
-    const user = localStorage.getItem("user");
-    if (!user) {
-      router.push("/login");
-    } else {
-      refreshChat();
+    if (typeof window !== "undefined") {
+      const user = localStorage.getItem("user");
+      if (!user) {
+        router.push("/login");
+      } else {
+        refreshChat();
+      }
     }
   }, [router]);
 
   useEffect(() => {
-    if (messages.length > 0) {
+    if (messages.length > 0 && typeof window !== "undefined") {
       saveChatHistory("chatHistory", messages);
     }
   }, [messages]);
@@ -56,7 +60,9 @@ export default function Chat() {
       getBotReply().then((botMessage) => {
         const newMessages = [...updatedMessages, botMessage];
         setMessages(newMessages);
-        saveChatHistory("chatHistory", newMessages);
+        if (typeof window !== "undefined") {
+          saveChatHistory("chatHistory", newMessages);
+        }
       });
     }
   };
